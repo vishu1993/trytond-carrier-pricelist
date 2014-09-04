@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<data>
+    <xpath expr="//field[@name='carrier_cost_method']" position="after">
+        <label name="price_list"/>
+        <field name="price_list"/>
+    </xpath>
+</data>

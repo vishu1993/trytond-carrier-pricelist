@@ -1,0 +1,5 @@
+[run]
+source = trytond.modules.carrier_pricelist
+
+[report]
+omit = */tests/*, */setup.py
