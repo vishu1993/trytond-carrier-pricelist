@@ -5,8 +5,6 @@
     :copyright: (c) 2014 by Openlabs Technologies & Consulting (P) Limited
     :license: BSD, see LICENSE for more details.
 """
-from decimal import Decimal
-
 from trytond.transaction import Transaction
 from trytond.pool import PoolMeta, Pool
 from trytond.model import fields
@@ -37,34 +35,13 @@ class Carrier:
         """Returns a list of tuple: (method, rate, currency, metadata)
         """
         Sale = Pool().get('sale.sale')
-        Product = Pool().get('product.product')
 
         sale = Transaction().context.get('sale')
 
-        if self.carrier_cost_method != 'pricelist' or not sale:
-            if hasattr(super(Carrier, self), 'get_rates'):
-                return super(Carrier, self).get_rates()
-            return []
+        if not sale or self.carrier_cost_method != 'pricelist':
+            return super(Carrier, self).get_rates()
 
-        sale = Sale(sale)
-
-        total = Decimal('0')
-        with Transaction().set_context(
-                customer=sale.party.id,
-                price_list=self.price_list.id,
-                currency=sale.currency.id):
-            for line in sale.lines:
-                if not line.product:
-                    continue
-                total += \
-                    Product.get_sale_price([line.product])[line.product.id] * \
-                    Decimal(line.quantity)
-
-        return [(
-            self.party.name, total, sale.currency.id, {}, {
-                'carrier_id': self.id
-            }
-        )]
+        return Sale(sale).get_pricelist_shipping_rates()
 
     def get_sale_price(self):
         if self.carrier_cost_method != 'pricelist':

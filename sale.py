@@ -64,6 +64,32 @@ class Sale:
             ]
         })
 
+    def get_pricelist_shipping_rates(self, silent=True):
+        """Get the shipping rates based on pricelist.
+        """
+        Product = Pool().get('product.product')
+        Carrier = Pool().get('carrier')
+
+        carrier, = Carrier.search([('carrier_cost_method', '=', 'pricelist')])
+
+        total = Decimal('0')
+        with Transaction().set_context(
+                customer=self.party.id,
+                price_list=carrier.price_list.id,
+                currency=self.currency.id):
+            for line in self.lines:
+                if not line.product:
+                    continue
+                total += \
+                    Product.get_sale_price([line.product])[line.product.id] * \
+                    Decimal(line.quantity)
+
+        return [(
+            carrier.party.name, total, self.currency.id, {}, {
+                'carrier_id': self.id
+            }
+        )]
+
     @classmethod
     def quote(cls, sales):
         res = super(Sale, cls).quote(sales)
