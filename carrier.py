@@ -8,6 +8,7 @@
 from decimal import Decimal
 
 from trytond.transaction import Transaction
+from trytond.exceptions import UserError
 from trytond.pool import PoolMeta, Pool
 from trytond.model import fields
 from trytond.pyson import Eval
@@ -55,14 +56,19 @@ class Carrier:
         """
         Sale = Pool().get('sale.sale')
         Shipment = Pool().get('stock.shipment.out')
+        Company = Pool().get('company.company')
 
         shipment = Transaction().context.get('shipment')
         sale = Transaction().context.get('sale')
 
-        if Transaction().context.get('ignore_carrier_computation'):
-            return Decimal('0'), self.currency.id
+        company = Transaction().context.get('company')
+        if not company:
+            raise UserError("Company not in context.")
+
+        default_currency = Company(company).currency
+
         if not sale and not shipment:
-            return Decimal('0'), self.currency.id
+            return Decimal('0'), default_currency.id
 
         if self.carrier_cost_method != 'pricelist':
             return super(Carrier, self).get_sale_price()
@@ -73,4 +79,4 @@ class Carrier:
         if shipment:
             return Shipment(shipment).get_pricelist_shipping_cost()
 
-        return Decimal('0'), self.currency.id
+        return Decimal('0'), default_currency.id
