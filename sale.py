@@ -28,6 +28,13 @@ class Sale:
         context['sale'] = self.id
         return context
 
+    def on_change_lines(self):
+        """Pass a flag in context which indicates the get_sale_price method
+        of pricelist carrier not to calculate cost on each line change
+        """
+        with Transaction().set_context({'ignore_carrier_computation': True}):
+            return super(Sale, self).on_change_lines()
+
     def update_pricelist_shipment_cost(self):
         "Add a shipping line to sale for pricelist costmethod"
         Sale = Pool().get('sale.sale')
@@ -64,8 +71,9 @@ class Sale:
             ]
         })
 
-    def get_pricelist_shipping_rates(self, silent=True):
-        """Get the shipping rates based on pricelist.
+    def get_pricelist_shipping_cost(self):
+        """
+        Return pricelist shipping cost
         """
         Product = Pool().get('product.product')
         Carrier = Pool().get('carrier')
@@ -84,8 +92,20 @@ class Sale:
                     Product.get_sale_price([line.product])[line.product.id] * \
                     Decimal(line.quantity)
 
+        return total, self.currency.id
+
+    def get_pricelist_shipping_rates(self, silent=True):
+        """Get the shipping rates based on pricelist.
+        """
+        Carrier = Pool().get('carrier')
+
+        carrier, = Carrier.search([('carrier_cost_method', '=', 'pricelist')])
+
+        cost, currency_id = self.get_pricelist_shipping_cost()
+
         return [(
-            carrier.party.name, total, self.currency.id, {}, {
+            carrier.party.name,
+            cost, currency_id, {}, {
                 'carrier_id': self.id
             }
         )]

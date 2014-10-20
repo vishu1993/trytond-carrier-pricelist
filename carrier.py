@@ -5,6 +5,8 @@
     :copyright: (c) 2014 by Openlabs Technologies & Consulting (P) Limited
     :license: BSD, see LICENSE for more details.
 """
+from decimal import Decimal
+
 from trytond.transaction import Transaction
 from trytond.pool import PoolMeta, Pool
 from trytond.model import fields
@@ -44,9 +46,31 @@ class Carrier:
         return Sale(sale).get_pricelist_shipping_rates()
 
     def get_sale_price(self):
+        """Estimates the shipment rate for the current shipment
+
+        The get_sale_price implementation by tryton's carrier module
+        returns a tuple of (value, currency_id)
+
+        :returns: A tuple of (value, currency_id)
+        """
+        Sale = Pool().get('sale.sale')
+        Shipment = Pool().get('stock.shipment.out')
+
+        shipment = Transaction().context.get('shipment')
+        sale = Transaction().context.get('sale')
+
+        if Transaction().context.get('ignore_carrier_computation'):
+            return Decimal('0'), self.currency.id
+        if not sale and not shipment:
+            return Decimal('0'), self.currency.id
+
         if self.carrier_cost_method != 'pricelist':
             return super(Carrier, self).get_sale_price()
 
-        _, price, currency_id, _, _ = self.get_rates()[0]
+        if sale:
+            return Sale(sale).get_pricelist_shipping_cost()
 
-        return price, currency_id
+        if shipment:
+            return Shipment(shipment).get_pricelist_shipping_cost()
+
+        return Decimal('0'), self.currency.id
