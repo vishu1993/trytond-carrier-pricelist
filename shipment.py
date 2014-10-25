@@ -9,6 +9,7 @@ from decimal import Decimal
 
 from trytond.transaction import Transaction
 from trytond.pool import PoolMeta, Pool
+from trytond.exceptions import UserError
 
 __metaclass__ = PoolMeta
 __all__ = ['ShipmentOut']
@@ -35,17 +36,25 @@ class ShipmentOut:
         """
         Product = Pool().get('product.product')
         Carrier = Pool().get('carrier')
+        Company = Pool().get('company.company')
 
         carrier, = Carrier.search([('carrier_cost_method', '=', 'pricelist')])
 
         total = Decimal('0')
+
+        company = Transaction().context.get('company')
+        if not company:
+            raise UserError("Company not in context.")
+
+        default_currency = Company(company).currency
+
         with Transaction().set_context(
-                customer=self.party.id,
+                customer=self.customer.id,
                 price_list=carrier.price_list.id,
-                currency=self.currency.id):
+                currency=default_currency.id):
             for move in self.outgoing_moves:
                 total += \
                     Product.get_sale_price([move.product])[move.product.id] * \
                     Decimal(move.quantity)
 
-        return total, self.currency.id
+        return total, default_currency.id

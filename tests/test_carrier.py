@@ -336,12 +336,20 @@ class CarrierTestCase(unittest.TestCase):
 
             self.assertEqual(sale.total_amount, Decimal('300'))
 
-            # Quote the sale
-            self.Sale.quote([sale])
+            with Transaction().set_context(company=self.company.id):
+                # Quote the sale
+                self.Sale.quote([sale])
+                self.Sale.confirm([sale])
+                self.Sale.process([sale])
 
             # Shipping line is added and total amount got updated.
             self.assertEqual(len(sale.lines), 3)
             self.assertEqual(sale.total_amount, Decimal('320'))
+
+            self.assertEqual(len(sale.shipments), 1)
+
+            shipment, = sale.shipments
+            self.assertEqual(shipment.cost, Decimal(20))
 
 
 def suite():
