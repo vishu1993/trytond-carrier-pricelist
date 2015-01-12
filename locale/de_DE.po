@@ -1,0 +1,11 @@
+# 
+msgid ""
+msgstr "Content-Type: text/plain; charset=utf-8\n"
+
+msgctxt "field:carrier,price_list:"
+msgid "Price List"
+msgstr "Preisliste"
+
+msgctxt "selection:carrier,carrier_cost_method:"
+msgid "Price List"
+msgstr "Preisliste"
