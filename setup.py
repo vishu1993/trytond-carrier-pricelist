@@ -30,8 +30,7 @@ class SQLiteTest(Command):
         if self.distribution.tests_require:
             self.distribution.fetch_build_eggs(self.distribution.tests_require)
 
-        from trytond.config import CONFIG
-        CONFIG['db_type'] = 'sqlite'
+        os.environ['TRYTOND_DATABASE_URI'] = 'sqlite://'
         os.environ['DB_NAME'] = ':memory:'
 
         from tests import suite
@@ -60,12 +59,7 @@ class PostgresTest(Command):
         if self.distribution.tests_require:
             self.distribution.fetch_build_eggs(self.distribution.tests_require)
 
-        from trytond.config import CONFIG
-        CONFIG['db_type'] = 'postgresql'
-        CONFIG['db_host'] = 'localhost'
-        CONFIG['db_port'] = 5432
-        CONFIG['db_user'] = 'postgres'
-
+        os.environ['TRYTOND_DATABASE_URI'] = 'postgresql://'
         os.environ['DB_NAME'] = 'test_' + str(int(time.time()))
 
         from tests import suite
@@ -121,10 +115,10 @@ setup(
         'trytond.modules.%s.tests' % MODULE,
     ],
     package_data={
-        'trytond.modules.%s' % MODULE: info.get('xml', [])
-        + info.get('translation', [])
-        + ['tryton.cfg', 'locale/*.po', 'tests/*.rst', 'reports/*.odt']
-        + ['view/*.xml'],
+        'trytond.modules.%s' % MODULE: info.get('xml', []) +
+        info.get('translation', []) +
+        ['tryton.cfg', 'locale/*.po', 'tests/*.rst', 'reports/*.odt'] +
+        ['view/*.xml'],
     },
     classifiers=[
         'Development Status :: 4 - Beta',
