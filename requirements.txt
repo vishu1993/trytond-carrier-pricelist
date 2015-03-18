@@ -1,7 +1,4 @@
 psycopg2
 
-# Install latest packages from github. This is temporary.
-https://github.com/openlabs/trytond-shipping/archive/develop.tar.gz
-
 # Install this package itself
 .
